@@ -75,6 +75,8 @@ export function WelcomeScreen({ totalPoints }: WelcomeScreenProps) {
 
     setTimeout(() => setShowContent(true), 400)
 
+    let animationFrameId: number
+
     const animate = () => {
       ctx.clearRect(0, 0, width, height)
 
@@ -107,12 +109,15 @@ export function WelcomeScreen({ totalPoints }: WelcomeScreenProps) {
         return true
       })
 
-      requestAnimationFrame(animate)
+      animationFrameId = requestAnimationFrame(animate)
     }
 
     animate()
 
-    return () => window.removeEventListener("resize", resize)
+    return () => {
+      window.removeEventListener("resize", resize)
+      cancelAnimationFrame(animationFrameId)
+    }
   }, [])
 
   return (

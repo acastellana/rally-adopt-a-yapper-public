@@ -49,6 +49,8 @@ export function GradientBlob() {
       })
     }
 
+    let animationFrameId: number
+
     const animate = () => {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
 
@@ -66,12 +68,15 @@ export function GradientBlob() {
         ctx.fill()
       })
 
-      requestAnimationFrame(animate)
+      animationFrameId = requestAnimationFrame(animate)
     }
 
     animate()
 
-    return () => window.removeEventListener("resize", resize)
+    return () => {
+      window.removeEventListener("resize", resize)
+      cancelAnimationFrame(animationFrameId)
+    }
   }, [])
 
   return (

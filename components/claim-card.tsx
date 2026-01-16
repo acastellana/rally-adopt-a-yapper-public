@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check, Sparkles, Zap } from "lucide-react"
+import { Check, Sparkles, Zap, AlertCircle } from "lucide-react"
 
 interface ClaimCardProps {
   id: number
+  nftKey: string
   name: string
   collection: string
   description: string
@@ -15,18 +16,78 @@ interface ClaimCardProps {
   claimed: boolean
   onClaim: () => void
   index: number
+  walletAddress: string | null
+  signMessage: ((message: Uint8Array) => Promise<Uint8Array>) | null
 }
 
-export function ClaimCard({ name, collection, description, points, rarity, claimed, onClaim, index }: ClaimCardProps) {
+export function ClaimCard({
+  nftKey,
+  name,
+  collection,
+  description,
+  points,
+  rarity,
+  claimed,
+  onClaim,
+  index,
+  walletAddress,
+  signMessage,
+}: ClaimCardProps) {
   const [isClaiming, setIsClaiming] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleClaim = async () => {
-    if (claimed || isClaiming) return
+    if (claimed || isClaiming || !walletAddress || !signMessage) return
+
     setIsClaiming(true)
-    await new Promise((r) => setTimeout(r, 800))
-    onClaim()
-    setIsClaiming(false)
+    setError(null)
+
+    try {
+      // Step 1: Get nonce and message to sign
+      const nonceResponse = await fetch("/api/claim/nonce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress, nftType: nftKey }),
+      })
+
+      const nonceData = await nonceResponse.json()
+
+      if (!nonceResponse.ok) {
+        throw new Error(nonceData.error || "Failed to get claim nonce")
+      }
+
+      // Step 2: Sign the message with wallet
+      const messageBytes = new TextEncoder().encode(nonceData.message)
+      const signatureBytes = await signMessage(messageBytes)
+      const signature = Buffer.from(signatureBytes).toString("base64")
+
+      // Step 3: Submit the claim
+      const claimResponse = await fetch("/api/claim/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress,
+          nftType: nftKey,
+          signature,
+          nonce: nonceData.nonce,
+        }),
+      })
+
+      const claimData = await claimResponse.json()
+
+      if (!claimResponse.ok) {
+        throw new Error(claimData.error || "Failed to submit claim")
+      }
+
+      // Success - notify parent
+      onClaim()
+    } catch (err) {
+      console.error("Claim error:", err)
+      setError(err instanceof Error ? err.message : "Failed to claim")
+    } finally {
+      setIsClaiming(false)
+    }
   }
 
   const rarityConfig = {
@@ -135,10 +196,27 @@ export function ClaimCard({ name, collection, description, points, rarity, claim
             />
           </div>
 
+          {/* Error message */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -10, height: 0 }}
+                className="mb-4 overflow-hidden"
+              >
+                <p className="flex items-center justify-center gap-2 rounded-xl bg-destructive/10 py-2 text-xs text-destructive">
+                  <AlertCircle className="h-3 w-3" />
+                  {error}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Claim button with wave animation */}
           <motion.button
             onClick={handleClaim}
-            disabled={claimed || isClaiming}
+            disabled={claimed || isClaiming || !walletAddress || !signMessage}
             className="relative w-full overflow-hidden rounded-2xl py-4 text-sm font-bold uppercase tracking-wider transition-all disabled:cursor-not-allowed"
             whileHover={!claimed ? { scale: 1.02 } : {}}
             whileTap={!claimed ? { scale: 0.98 } : {}}
@@ -220,7 +298,7 @@ export function ClaimCard({ name, collection, description, points, rarity, claim
                           animate={{ rotate: 360 }}
                           transition={{ duration: 0.6, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
                         />
-                        Claiming...
+                        Signing...
                       </>
                     ) : (
                       <>

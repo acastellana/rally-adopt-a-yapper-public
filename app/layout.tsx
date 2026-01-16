@@ -5,8 +5,8 @@ import { Analytics } from "@vercel/analytics/next"
 import { WalletContextProvider } from "@/components/wallet-provider"
 import "./globals.css"
 
-const _inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
-const _jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" })
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
 export const metadata: Metadata = {
   title: "Rally | Decentralized Marketing Protocol",
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <WalletContextProvider>{children}</WalletContextProvider>
         <Analytics />
       </body>

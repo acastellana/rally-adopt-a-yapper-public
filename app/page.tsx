@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useWalletModal } from "@solana/wallet-adapter-react-ui"
 import { motion, AnimatePresence } from "framer-motion"
@@ -11,40 +11,14 @@ import { StatsBar } from "@/components/stats-bar"
 import { WelcomeScreen } from "@/components/welcome-screen"
 import { WalletInput } from "@/components/wallet-input"
 import { ConnectXModal } from "@/components/connect-x-modal"
-import { Wallet, ArrowRight, Sparkles, Edit3, Zap } from "lucide-react"
-
-const NFTS = [
-  {
-    id: 1,
-    key: "wallchain",
-    name: "Quack Heads",
-    collection: "Wallchain",
-    description: "Owning a Wallchain NFT",
-    image: "/duck-quack-heads-nft-pixel-art.jpg",
-    points: 2500,
-    rarity: "legendary" as const,
-  },
-  {
-    id: 2,
-    key: "kaito",
-    name: "Yapybaras",
-    collection: "Kaito",
-    description: "Being a Kaito Staker",
-    image: "/capybara-yapybara-nft-cute-art.jpg",
-    points: 1800,
-    rarity: "rare" as const,
-  },
-]
-
-interface Eligibility {
-  wallchain: { eligible: boolean; count: number }
-  kaito: { eligible: boolean; count: number }
-}
+import { Wallet, ArrowRight, Edit3, Zap, ExternalLink } from "lucide-react"
+import { NFTS } from "@/lib/config"
+import type { Eligibility } from "@/lib/types"
 
 type AppStep = "landing" | "claim" | "welcome"
 
 export default function Page() {
-  const { publicKey, connected } = useWallet()
+  const { publicKey, connected, signMessage } = useWallet()
   const { setVisible } = useWalletModal()
 
   const [claimed, setClaimed] = useState<Set<number>>(new Set())
@@ -61,45 +35,96 @@ export default function Page() {
   const [xConnected, setXConnected] = useState(false)
   const [xUsername, setXUsername] = useState<string | null>(null)
 
-  const activeAddress = solanaAddress || ethAddress || publicKey?.toBase58() || null
-  const isActive = connected || !!solanaAddress || !!ethAddress
+  // Determine active wallet address for signing
+  const activeWalletAddress = connected && publicKey ? publicKey.toBase58() : solanaAddress
 
   const handleOpenWalletModal = () => {
     setVisible(true)
   }
 
-  const checkEligibility = useCallback(async (solAddr: string, ethAddr: string) => {
-    setIsCheckingEligibility(true)
-    setEligibilityError(null)
-
+  // Check for existing claims when eligibility is checked
+  const fetchClaimStatus = useCallback(async (walletAddr: string) => {
     try {
-      const response = await fetch("/api/check-eligibility", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: solAddr || null,
-          ethAddress: ethAddr || null,
-        }),
-      })
-
+      const response = await fetch(`/api/claim/status?wallet=${encodeURIComponent(walletAddr)}`)
       const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to check eligibility")
+      if (response.ok && data.claims) {
+        const claimedIds = new Set<number>()
+        if (data.claims.wallchain?.claimed) {
+          const nft = NFTS.find((n) => n.key === "wallchain")
+          if (nft) claimedIds.add(nft.id)
+        }
+        if (data.claims.kaito?.claimed) {
+          const nft = NFTS.find((n) => n.key === "kaito")
+          if (nft) claimedIds.add(nft.id)
+        }
+        setClaimed(claimedIds)
       }
-
-      setEligibility(data.eligibility)
-      if (solAddr) setSolanaAddress(solAddr)
-      if (ethAddr) setEthAddress(ethAddr)
-
-      setStep("claim")
-      setShowXModal(true)
-    } catch (err) {
-      setEligibilityError(err instanceof Error ? err.message : "Something went wrong")
-    } finally {
-      setIsCheckingEligibility(false)
+    } catch {
+      // Ignore errors - claims will just show as unclaimed
     }
   }, [])
+
+  // Check for existing X link
+  const checkXLinkStatus = useCallback(async (walletAddr: string) => {
+    try {
+      const response = await fetch(`/api/auth/x/status?wallet=${encodeURIComponent(walletAddr)}`)
+      const data = await response.json()
+
+      if (response.ok && data.linked) {
+        setXConnected(true)
+        setXUsername(`@${data.username}`)
+        return true
+      }
+      return false
+    } catch {
+      return false
+    }
+  }, [])
+
+  const checkEligibility = useCallback(
+    async (solAddr: string, ethAddr: string) => {
+      setIsCheckingEligibility(true)
+      setEligibilityError(null)
+
+      try {
+        const response = await fetch("/api/check-eligibility", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            walletAddress: solAddr || null,
+            ethAddress: ethAddr || null,
+          }),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to check eligibility")
+        }
+
+        setEligibility(data.eligibility)
+        if (solAddr) setSolanaAddress(solAddr)
+        if (ethAddr) setEthAddress(ethAddr)
+
+        // Check existing claims and X link status
+        if (solAddr) {
+          await fetchClaimStatus(solAddr)
+          const hasXLink = await checkXLinkStatus(solAddr)
+          if (!hasXLink) {
+            setShowXModal(true)
+          }
+        }
+
+        setStep("claim")
+      } catch (err) {
+        setEligibilityError(err instanceof Error ? err.message : "Something went wrong")
+      } finally {
+        setIsCheckingEligibility(false)
+      }
+    },
+    [fetchClaimStatus, checkXLinkStatus]
+  )
 
   const handleWalletConnect = useCallback(() => {
     if (publicKey && !eligibility) {
@@ -107,9 +132,12 @@ export default function Page() {
     }
   }, [publicKey, eligibility, checkEligibility])
 
-  if (connected && publicKey && !eligibility && !isCheckingEligibility && !eligibilityError && step === "landing") {
-    checkEligibility(publicKey.toBase58(), "")
-  }
+  // Fix: Move side effect from render to useEffect
+  useEffect(() => {
+    if (connected && publicKey && !eligibility && !isCheckingEligibility && !eligibilityError && step === "landing") {
+      checkEligibility(publicKey.toBase58(), "")
+    }
+  }, [connected, publicKey, eligibility, isCheckingEligibility, eligibilityError, step, checkEligibility])
 
   const handleXConnected = (username: string) => {
     setXUsername(username)
@@ -123,14 +151,6 @@ export default function Page() {
 
     const eligibleNfts = NFTS.filter((nft) => eligibility?.[nft.key as keyof Eligibility]?.eligible)
     if (newClaimed.size === eligibleNfts.length && eligibleNfts.length > 0) {
-      setTimeout(() => setStep("welcome"), 1200)
-    }
-  }
-
-  const handleClaimAll = () => {
-    const eligibleIds = NFTS.filter((nft) => eligibility?.[nft.key as keyof Eligibility]?.eligible).map((nft) => nft.id)
-    setClaimed(new Set(eligibleIds))
-    if (eligibleIds.length > 0) {
       setTimeout(() => setStep("welcome"), 1200)
     }
   }
@@ -151,6 +171,8 @@ export default function Page() {
     setXUsername(null)
   }
 
+  const isActive = connected || !!solanaAddress || !!ethAddress
+
   if (step === "welcome") {
     return <WelcomeScreen totalPoints={totalPoints} />
   }
@@ -159,7 +181,7 @@ export default function Page() {
     <div className="relative min-h-screen bg-background">
       <GradientBlob />
 
-      <ConnectXModal isOpen={showXModal} onConnected={handleXConnected} />
+      <ConnectXModal isOpen={showXModal} walletAddress={activeWalletAddress} onConnected={handleXConnected} />
 
       {/* Header */}
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-border/30 bg-background/60 backdrop-blur-2xl">
@@ -230,8 +252,8 @@ export default function Page() {
             </h1>
 
             <p className="mx-auto mt-8 max-w-2xl text-pretty text-lg text-muted-foreground md:text-xl">
-              Sorry you guys were fucked by Nikita. We're building a decentralized marketing protocol and would like to
-              invite you.
+              Sorry you guys were fucked by Nikita. We&apos;re building a decentralized marketing protocol and would
+              like to invite you.
             </p>
           </motion.div>
 
@@ -373,13 +395,30 @@ export default function Page() {
                       <p className="text-sm font-medium text-muted-foreground">Checking eligibility for</p>
                       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
                         {solanaAddress && (
-                          <span className="rounded-full border border-secondary/30 bg-secondary/10 px-4 py-1.5 font-mono text-xs text-secondary">
+                          <a
+                            href={`https://solscan.io/account/${solanaAddress}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-full border border-secondary/30 bg-secondary/10 px-4 py-1.5 font-mono text-xs text-secondary hover:bg-secondary/20 transition-colors"
+                          >
                             SOL: {solanaAddress.slice(0, 6)}...{solanaAddress.slice(-6)}
-                          </span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
                         )}
                         {ethAddress && (
-                          <span className="rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 font-mono text-xs text-primary">
+                          <a
+                            href={`https://etherscan.io/address/${ethAddress}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
+                          >
                             ETH: {ethAddress.slice(0, 6)}...{ethAddress.slice(-6)}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                        {xUsername && (
+                          <span className="rounded-full border border-foreground/30 bg-foreground/10 px-4 py-1.5 font-mono text-xs text-foreground">
+                            {xUsername}
                           </span>
                         )}
                       </div>
@@ -393,35 +432,30 @@ export default function Page() {
                           {eligibleNfts.map((nft, i) => (
                             <ClaimCard
                               key={nft.id}
-                              {...nft}
+                              id={nft.id}
+                              nftKey={nft.key}
+                              name={nft.name}
+                              collection={nft.collection}
+                              description={nft.description}
+                              image={nft.image}
+                              points={nft.points}
+                              rarity={nft.rarity}
                               claimed={claimed.has(nft.id)}
                               onClaim={() => handleClaim(nft.id)}
                               index={i}
+                              walletAddress={activeWalletAddress}
+                              signMessage={signMessage || null}
                             />
                           ))}
                         </div>
 
-                        {!allClaimed && (
+                        {!allClaimed && !signMessage && (
                           <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5 }}
-                            className="mt-14 flex justify-center"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-8 text-center text-sm text-muted-foreground"
                           >
-                            <motion.button
-                              onClick={handleClaimAll}
-                              className="group relative overflow-hidden rounded-full border-2 border-secondary/50 bg-card/50 px-10 py-4 font-bold text-secondary backdrop-blur-sm transition-all hover:border-secondary hover:bg-secondary hover:text-white"
-                              whileHover={{ scale: 1.03 }}
-                              whileTap={{ scale: 0.97 }}
-                            >
-                              <span className="flex items-center gap-3">
-                                <Sparkles className="h-5 w-5" />
-                                Claim All RLP
-                                <span className="rounded-full bg-secondary/20 px-4 py-1 font-mono text-sm group-hover:bg-white/20">
-                                  +{(totalPoints - pointsClaimed).toLocaleString()}
-                                </span>
-                              </span>
-                            </motion.button>
+                            Connect your wallet to sign and claim your RLP rewards
                           </motion.div>
                         )}
                       </>
@@ -436,8 +470,8 @@ export default function Page() {
                         </div>
                         <h3 className="mt-8 text-2xl font-bold text-foreground">No eligible NFTs found</h3>
                         <p className="mt-3 max-w-md text-muted-foreground">
-                          These wallets don't hold any Quack Heads or Yapybaras NFTs. Make sure you're checking the
-                          correct addresses.
+                          These wallets don&apos;t hold any Quack Heads or Yapybaras NFTs. Make sure you&apos;re
+                          checking the correct addresses.
                         </p>
                         <motion.button
                           onClick={handleReset}

@@ -3,7 +3,7 @@
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useWalletModal } from "@solana/wallet-adapter-react-ui"
 import { motion, AnimatePresence } from "framer-motion"
-import { Wallet, Check, Loader2, LogOut } from "lucide-react"
+import { Wallet, Check, Loader2, LogOut, ExternalLink } from "lucide-react"
 
 interface WalletButtonProps {
   onConnect?: () => void
@@ -74,7 +74,18 @@ export function WalletButton({ onConnect }: WalletButtonProps) {
         </div>
 
         <span className="text-sm font-semibold text-foreground">
-          {connecting ? "Connecting..." : connected ? truncate(publicKey!.toBase58()) : "Connect"}
+          {connecting ? "Connecting..." : connected ? (
+            <a
+              href={`https://solscan.io/account/${publicKey!.toBase58()}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 hover:text-secondary transition-colors"
+            >
+              {truncate(publicKey!.toBase58())}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          ) : "Connect"}
         </span>
 
         {connected && (

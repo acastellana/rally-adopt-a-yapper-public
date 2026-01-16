@@ -9,75 +9,80 @@
 /* Rally Black: #0A0A0A, Bright White: #FFFFFF */
 
 :root {
-  /* Updated to Rally brand colors - dark mode by default */
-  --background: oklch(0.15 0.08 275);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.18 0.1 275);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.18 0.1 275);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.5 0.25 290);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.65 0.3 320);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.25 0.08 275);
-  --muted-foreground: oklch(0.7 0.02 275);
-  --accent: oklch(0.75 0.18 85);
-  --accent-foreground: oklch(0.1 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.3 0.1 280);
-  --input: oklch(0.22 0.08 275);
-  --ring: oklch(0.65 0.3 320);
-  --chart-1: oklch(0.5 0.25 290);
-  --chart-2: oklch(0.65 0.3 320);
-  --chart-3: oklch(0.75 0.25 335);
-  --chart-4: oklch(0.75 0.18 85);
-  --chart-5: oklch(0.7 0.2 140);
+  /* Rally Brand Colors - Light theme */
+  /* Soft Cloud: #F0F1E9, Rally Black: #0A0A0A, Bright White: #FFFFFF */
+  /* Electric Indigo: #4E11CC, Radiant Magenta: #E943DE, Neon Pink: #FF78E2 */
+  /* Sunrise Gold: #FFB527, Midnight Blue: #0C0B58 */
+
+  --background: #F0F1E9;
+  --foreground: #0A0A0A;
+  --card: #FFFFFF;
+  --card-foreground: #0A0A0A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A0A0A;
+  --primary: #4E11CC;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E943DE;
+  --secondary-foreground: #FFFFFF;
+  --muted: #E5E6DE;
+  --muted-foreground: #5A5A5A;
+  --accent: #FFB527;
+  --accent-foreground: #0A0A0A;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #D1D2CA;
+  --input: #E5E6DE;
+  --ring: #4E11CC;
+  --chart-1: #4E11CC;
+  --chart-2: #E943DE;
+  --chart-3: #FF78E2;
+  --chart-4: #FFB527;
+  --chart-5: #0C0B58;
   --radius: 1rem;
-  --sidebar: oklch(0.15 0.08 275);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.5 0.25 290);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.25 0.08 275);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.3 0.1 280);
-  --sidebar-ring: oklch(0.65 0.3 320);
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0A0A0A;
+  --sidebar-primary: #4E11CC;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0F1E9;
+  --sidebar-accent-foreground: #0A0A0A;
+  --sidebar-border: #D1D2CA;
+  --sidebar-ring: #4E11CC;
 }
 
 .dark {
-  --background: oklch(0.12 0.08 275);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.16 0.1 275);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.16 0.1 275);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.55 0.28 290);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.7 0.32 320);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.22 0.08 275);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.78 0.2 85);
-  --accent-foreground: oklch(0.1 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.28 0.1 280);
-  --input: oklch(0.2 0.08 275);
-  --ring: oklch(0.7 0.32 320);
-  --chart-1: oklch(0.55 0.28 290);
-  --chart-2: oklch(0.7 0.32 320);
-  --chart-3: oklch(0.75 0.25 335);
-  --chart-4: oklch(0.78 0.2 85);
-  --chart-5: oklch(0.7 0.2 140);
-  --sidebar: oklch(0.12 0.08 275);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.55 0.28 290);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.2 0.08 275);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.28 0.1 280);
-  --sidebar-ring: oklch(0.7 0.32 320);
+  /* Rally Brand Colors - Dark theme */
+  --background: #0A0A0A;
+  --foreground: #F0F1E9;
+  --card: #1A1A1A;
+  --card-foreground: #F0F1E9;
+  --popover: #1A1A1A;
+  --popover-foreground: #F0F1E9;
+  --primary: #4E11CC;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E943DE;
+  --secondary-foreground: #FFFFFF;
+  --muted: #2A2A2A;
+  --muted-foreground: #A0A0A0;
+  --accent: #FFB527;
+  --accent-foreground: #0A0A0A;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #333333;
+  --input: #2A2A2A;
+  --ring: #4E11CC;
+  --chart-1: #4E11CC;
+  --chart-2: #E943DE;
+  --chart-3: #FF78E2;
+  --chart-4: #FFB527;
+  --chart-5: #0C0B58;
+  --sidebar: #1A1A1A;
+  --sidebar-foreground: #F0F1E9;
+  --sidebar-primary: #4E11CC;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #2A2A2A;
+  --sidebar-accent-foreground: #F0F1E9;
+  --sidebar-border: #333333;
+  --sidebar-ring: #4E11CC;
 }
 
 @theme inline {
@@ -197,6 +202,18 @@
     }
     100% {
       background-position: 200% center;
+    }
+  }
+
+  @keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
     }
   }
 

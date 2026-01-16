@@ -147,12 +147,43 @@ export function ClaimCard({ name, collection, description, points, rarity, claim
               {claimed ? (
                 <motion.span
                   key="claimed"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-muted py-4 text-muted-foreground"
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="relative block"
                 >
-                  <Check className="h-5 w-5" />
-                  Claimed
+                  {/* Gradient border effect for claimed state - Rally colors */}
+                  <span
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      background: "linear-gradient(135deg, #FFB527, #FF78E2, #E943DE, #FF78E2, #FFB527)",
+                      backgroundSize: "200% 200%",
+                      animation: "gradientShift 3s ease infinite",
+                    }}
+                  />
+                  <span className="absolute inset-[2px] rounded-2xl bg-card" />
+
+                  {/* Pulse glow effect - Sunrise Gold */}
+                  <motion.span
+                    className="absolute inset-0 rounded-2xl"
+                    animate={{
+                      boxShadow: [
+                        "0 0 15px rgba(255, 181, 39, 0.2)",
+                        "0 0 30px rgba(255, 181, 39, 0.5)",
+                        "0 0 15px rgba(255, 181, 39, 0.2)",
+                      ],
+                    }}
+                    transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                  />
+
+                  <span className="relative flex items-center justify-center gap-2 py-4" style={{ color: "#FFB527" }}>
+                    <motion.span
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+                    >
+                      <Check className="h-5 w-5" />
+                    </motion.span>
+                    Claimed
+                  </span>
                 </motion.span>
               ) : (
                 <motion.span

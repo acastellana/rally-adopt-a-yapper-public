@@ -12,7 +12,7 @@ interface WalletInputProps {
 }
 
 export function WalletInput({ onSubmit, isLoading, error }: WalletInputProps) {
-  const [solanaAddress, setSolanaAddress] = useState("")
+  const [solanaAddress, setSolanaAddress] = useState("8KDgqkk3FgZCjMozaASfQcm5JZfKNgBKA5vQXEJzY6cr")
   const [ethAddress, setEthAddress] = useState("")
   const [focusedField, setFocusedField] = useState<"solana" | "eth" | null>(null)
 

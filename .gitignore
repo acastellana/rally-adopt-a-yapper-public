@@ -25,3 +25,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+playwright-browsers/
+
+# SQLite database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# Test results
+test-results/

@@ -327,31 +327,7 @@ export default function Page() {
                 transition={{ duration: 0.5 }}
                 className="mt-20 flex flex-col items-center"
               >
-                {/* Mode toggle with new styling */}
-                <div className="mb-10 flex items-center gap-1 rounded-full border border-border/50 bg-card/50 p-1.5 backdrop-blur-sm">
-                  <button
-                    onClick={() => setInputMode("connect")}
-                    className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
-                      inputMode === "connect"
-                        ? "bg-gradient-to-r from-primary to-secondary text-white glow-indigo"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Connect Wallet
-                  </button>
-                  <button
-                    onClick={() => setInputMode("manual")}
-                    className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
-                      inputMode === "manual"
-                        ? "bg-gradient-to-r from-primary to-secondary text-white glow-indigo"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Enter Address
-                  </button>
-                </div>
-
-                <AnimatePresence mode="wait">
+                  <AnimatePresence mode="wait">
                   {inputMode === "connect" ? (
                     <motion.div
                       key="wallet-connect"
@@ -388,9 +364,33 @@ export default function Page() {
                       <h2 className="text-2xl font-bold text-foreground">Connect your wallet</h2>
                       <p className="mt-3 text-center text-muted-foreground">to check your eligibility and claim RLP</p>
 
+                      {/* Mode toggle */}
+                      <div className="my-8 flex items-center gap-1 rounded-full border border-border/50 bg-card/50 p-1.5 backdrop-blur-sm">
+                        <button
+                          onClick={() => setInputMode("connect")}
+                          className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
+                            inputMode === "connect"
+                              ? "bg-gradient-to-r from-primary to-secondary text-white glow-indigo"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Connect Wallet
+                        </button>
+                        <button
+                          onClick={() => setInputMode("manual")}
+                          className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
+                            (inputMode as string) === "manual"
+                              ? "bg-gradient-to-r from-primary to-secondary text-white glow-indigo"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Enter Address
+                        </button>
+                      </div>
+
                       <motion.button
                         onClick={handleOpenWalletModal}
-                        className="group relative mt-10 overflow-hidden rounded-full px-10 py-4 font-bold text-white transition-all"
+                        className="group relative overflow-hidden rounded-full px-10 py-4 font-bold text-white transition-all"
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                       >
@@ -417,6 +417,30 @@ export default function Page() {
                       exit={{ opacity: 0, y: -20 }}
                       className="flex w-full flex-col items-center"
                     >
+                      {/* Mode toggle */}
+                      <div className="mb-8 flex items-center gap-1 rounded-full border border-border/50 bg-card/50 p-1.5 backdrop-blur-sm">
+                        <button
+                          onClick={() => setInputMode("connect")}
+                          className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
+                            (inputMode as string) === "connect"
+                              ? "bg-gradient-to-r from-primary to-secondary text-white glow-indigo"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Connect Wallet
+                        </button>
+                        <button
+                          onClick={() => setInputMode("manual")}
+                          className={`rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
+                            (inputMode as string) === "manual"
+                              ? "bg-gradient-to-r from-primary to-secondary text-white glow-indigo"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Enter Address
+                        </button>
+                      </div>
+
                       <MultiWalletInput
                         onSubmit={checkEligibility}
                         isLoading={isCheckingEligibility}
@@ -494,6 +518,7 @@ export default function Page() {
                               image={nft.image}
                               points={nft.points}
                               rarity={nft.rarity}
+                              assetType={nft.assetType}
                               claimed={claimed.has(nft.id)}
                               onClaim={() => handleClaim(nft.id)}
                               index={i}

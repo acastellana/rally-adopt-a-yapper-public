@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Check, Sparkles, Zap, AlertCircle } from "lucide-react"
+import { Check, Sparkles, Zap, AlertCircle, Image, Lock } from "lucide-react"
+import type { AssetType } from "@/lib/types"
 
 interface ClaimCardProps {
   id: number
@@ -13,6 +14,7 @@ interface ClaimCardProps {
   image: string
   points: number
   rarity: "common" | "rare" | "legendary"
+  assetType: AssetType
   claimed: boolean
   onClaim: () => void
   index: number
@@ -27,6 +29,7 @@ export function ClaimCard({
   description,
   points,
   rarity,
+  assetType,
   claimed,
   onClaim,
   index,
@@ -108,7 +111,26 @@ export function ClaimCard({
     },
   }
 
+  const assetTypeConfig = {
+    nft: {
+      label: "NFT",
+      icon: Image,
+      className: "bg-primary/20 text-primary border-primary/30",
+    },
+    staked: {
+      label: "Staked",
+      icon: Lock,
+      className: "bg-accent/20 text-accent border-accent/30",
+    },
+    token: {
+      label: "Token",
+      icon: Sparkles,
+      className: "bg-secondary/20 text-secondary border-secondary/30",
+    },
+  }
+
   const config = rarityConfig[rarity]
+  const assetConfig = assetTypeConfig[assetType]
 
   return (
     <motion.div
@@ -139,6 +161,14 @@ export function ClaimCard({
         />
 
         <div className="relative p-6">
+          {/* Asset type badge */}
+          <div className="mb-4">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${assetConfig.className}`}>
+              <assetConfig.icon className="h-3 w-3" />
+              {assetConfig.label}
+            </span>
+          </div>
+
           {/* Header with floating animation */}
           <div className="mb-6 flex items-start justify-between">
             <motion.div animate={isHovered ? { x: 4 } : { x: 0 }} transition={{ duration: 0.3 }}>

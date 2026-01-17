@@ -1,0 +1,72 @@
+name: exo-code
+kind: helper
+version: "1.0.0"
+description: "Mindset primer for writing defensive, well-reasoned code."
+severity: low
+tags:
+  - coding
+  - mindset
+  - quality
+  - defensive-programming
+
+purpose: |
+  A pre-coding ritual that surfaces assumptions, edge cases, and failure modes
+  before they become bugs. Helps shift from "does it work?" to "under what
+  conditions does it work?"
+
+owns:
+  - "Coding mindset and defensive programming guidance"
+
+patterns:
+  - id: assumptions-first
+    description: |
+      State assumptions about inputs, environment, and callers before writing code.
+      Unstated assumptions become undocumented behavior.
+    example: |
+      Before: func Process(data []byte) { ... }
+      After:
+      // Assumptions:
+      // - data is non-nil (caller validated)
+      // - data is valid UTF-8
+      // - max size is 10MB (enforced at API boundary)
+      func Process(data []byte) { ... }
+
+  - id: edge-cases-before-happy-path
+    description: |
+      Enumerate edge cases and failure modes before implementing the happy path.
+      The cases you name are the cases you'll handle.
+    example: |
+      Edge cases for ParseUserID(s string):
+      - empty string
+      - whitespace only
+      - valid prefix but truncated
+      - valid format but non-existent user
+      - SQL injection attempt
+      - extremely long input
+
+  - id: smaller-than-instinct
+    description: |
+      The first implementation that comes to mind is usually larger than necessary.
+      Remove features, abstractions, and flexibility until you can't remove more.
+
+  - id: defend-what-you-write
+    description: |
+      If you can't explain why a line of code is correct, don't write it.
+      If you can't explain when it would fail, you don't understand it.
+
+anti_patterns:
+  - id: completion-reflex
+    description: "Rushing to produce running code before understanding the problem"
+    why_bad: "Running code that handles 80% of cases ships bugs for the other 20%"
+
+  - id: pattern-matching
+    description: "Copying similar code without understanding differences in context"
+    why_bad: "Similar problems have different edge cases; copied code inherits wrong assumptions"
+
+  - id: happy-path-only
+    description: "Implementing the success case and 'handling errors later'"
+    why_bad: "Error handling written later is error handling written never"
+
+  - id: premature-abstraction
+    description: "Creating helpers, utilities, or abstractions before the second use case"
+    why_bad: "Abstractions encode assumptions; premature ones encode wrong assumptions"

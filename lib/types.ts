@@ -7,6 +7,8 @@ export interface XLink {
 
 export type CollectionKey = "wallchain" | "kaito" | "skaito" | "cookie"
 
+export type AssetType = "nft" | "staked" | "token"
+
 export interface Claim {
   walletAddress: string
   nftType: CollectionKey
@@ -50,4 +52,7 @@ export interface NFTConfig {
   image: string
   points: number
   rarity: "common" | "rare" | "legendary"
+  assetType: AssetType
+  holdingUnit: string
+  holdingUnitPlural: string
 }

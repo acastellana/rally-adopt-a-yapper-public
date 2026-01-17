@@ -1,0 +1,44 @@
+name: exo-code
+version: "1.0.0"
+
+triggers:
+  - condition: "Starting implementation of a new feature"
+    action: "Invoke /exo-code before writing code"
+  - condition: "Fixing a bug"
+    action: "Invoke /exo-code to surface related edge cases"
+  - condition: "Writing code that handles external input"
+    action: "Invoke /exo-code to enumerate malicious inputs"
+  - condition: "Implementing error handling"
+    action: "Invoke /exo-code to list failure modes"
+
+complements:
+  - skill: exo-tdd-core-first
+    relationship: "exo-code provides the mindset; exo-tdd-core-first provides the process"
+  - skill: exo-flow-spec
+    relationship: "exo-flow-spec documents the plan; exo-code guides the implementation"
+
+used_by:
+  - skill: exo-tdd-core-first
+    position: "first in sequence"
+    reason: "Prime defensive mindset before writing any implementation code"
+  - skill: exo-add-new-pass
+    position: "first in sequence"
+    reason: "Surface assumptions before scaffolding pass code"
+  - skill: exo-add-new-store
+    position: "first in sequence"
+    reason: "Surface edge cases before scaffolding store code"
+  - skill: exo-add-new-app
+    position: "first in sequence"
+    reason: "Surface boundary assumptions before scaffolding domain code"
+  - skill: exo-polish
+    position: "first in sequence"
+    reason: "Avoid introducing bugs during refactoring"
+  - skill: exo-frontend-patterns
+    position: "first in sequence"
+    reason: "Surface frontend edge cases (user input, API errors)"
+
+usage_hints:
+  - "Use at the start of any coding session"
+  - "Re-invoke when you notice yourself rushing"
+  - "Particularly valuable before touching security-sensitive code"
+  - "Good companion to code review - surfaces what reviewer should check"

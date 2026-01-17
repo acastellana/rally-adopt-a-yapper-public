@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import { ArrowRight, PartyPopper, Sparkles, X } from "lucide-react"
+import { NFTS } from "@/lib/config"
+import type { AssetType } from "@/lib/types"
 
 interface Confetti {
   x: number
@@ -18,10 +20,10 @@ interface Confetti {
 
 // Twitter handles for each collection
 const COLLECTION_HANDLES: Record<string, string> = {
-  wallchain: "@wallaboraxyz",
+  wallchain: "@wallchain_xyz",
   kaito: "@KaitoAI",
   skaito: "@KaitoAI",
-  cookie: "@cookie3_com",
+  cookie: "@cookiedotfun",
 }
 
 const COLLECTION_NAMES: Record<string, string> = {
@@ -29,6 +31,12 @@ const COLLECTION_NAMES: Record<string, string> = {
   kaito: "Yapybaras",
   skaito: "sKAITO",
   cookie: "Cookie",
+}
+
+// Get asset type for a collection key
+const getAssetType = (key: string): AssetType => {
+  const nft = NFTS.find(n => n.key === key)
+  return nft?.assetType ?? "nft"
 }
 
 interface WelcomeScreenProps {
@@ -45,13 +53,30 @@ export function WelcomeScreen({ totalPoints, claimedCollections = [] }: WelcomeS
 
   const getCollectionText = () => {
     if (claimedCollections.length === 0) return ""
-    const names = claimedCollections.map(key => COLLECTION_NAMES[key]).filter(Boolean)
-    if (names.length === 1) return names[0]
-    if (names.length === 2) return `${names[0]} & ${names[1]}`
-    return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`
+
+    // Group collections by asset type
+    const nfts = claimedCollections.filter(key => getAssetType(key) === "nft")
+    const staked = claimedCollections.filter(key => getAssetType(key) === "staked")
+
+    const formatNames = (keys: string[]) => {
+      const names = keys.map(key => COLLECTION_NAMES[key]).filter(Boolean)
+      if (names.length === 1) return names[0]
+      if (names.length === 2) return `${names[0]} & ${names[1]}`
+      return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`
+    }
+
+    const parts: string[] = []
+    if (nfts.length > 0) {
+      parts.push(`holding ${formatNames(nfts)} NFT${nfts.length > 1 ? "s" : ""}`)
+    }
+    if (staked.length > 0) {
+      parts.push(`staking ${formatNames(staked)}`)
+    }
+
+    return parts.join(" + ")
   }
 
-  const tweetText = `i just got ${totalPoints.toLocaleString()} RLP for holding ${getCollectionText()} ${getHandles()}\n\ninfofi isn't dead - @RallyOnchain is still kicking and wants to adopt all yappers. join us! 👇`
+  const tweetText = `i just got ${totalPoints.toLocaleString()} RLP for ${getCollectionText()} ${getHandles()}\n\ninfofi isn't dead - @RallyOnchain is still kicking and wants to adopt all yappers. join us! 👇`
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const confettiRef = useRef<Confetti[]>([])
   const [showContent, setShowContent] = useState(false)

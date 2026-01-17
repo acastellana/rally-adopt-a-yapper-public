@@ -28,12 +28,16 @@ export async function setClaim(claim: Claim): Promise<void> {
 export async function getAllClaims(walletAddress: string): Promise<{
   wallchain: Claim | null
   kaito: Claim | null
+  skaito: Claim | null
+  cookie: Claim | null
 }> {
-  const [wallchain, kaito] = await Promise.all([
+  const [wallchain, kaito, skaito, cookie] = await Promise.all([
     getClaim(walletAddress, "wallchain"),
     getClaim(walletAddress, "kaito"),
+    getClaim(walletAddress, "skaito"),
+    getClaim(walletAddress, "cookie"),
   ])
-  return { wallchain, kaito }
+  return { wallchain, kaito, skaito, cookie }
 }
 
 // Nonce operations

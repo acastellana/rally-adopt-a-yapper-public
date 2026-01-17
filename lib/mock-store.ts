@@ -45,10 +45,17 @@ export function setMockClaim(claim: Claim): void {
   mockClaims.set(`${claim.walletAddress.toLowerCase()}:${claim.nftType}`, claim)
 }
 
-export function getAllMockClaims(walletAddress: string): { wallchain: Claim | null; kaito: Claim | null } {
+export function getAllMockClaims(walletAddress: string): {
+  wallchain: Claim | null
+  kaito: Claim | null
+  skaito: Claim | null
+  cookie: Claim | null
+} {
   return {
     wallchain: getMockClaim(walletAddress, "wallchain"),
     kaito: getMockClaim(walletAddress, "kaito"),
+    skaito: getMockClaim(walletAddress, "skaito"),
+    cookie: getMockClaim(walletAddress, "cookie"),
   }
 }
 

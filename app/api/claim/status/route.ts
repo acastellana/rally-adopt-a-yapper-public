@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isMockEnabled, getAllMockClaims } from "@/lib/mock-store"
 import { getAllClaims } from "@/lib/kv"
+import type { CollectionKey } from "@/lib/types"
+
+const ALL_COLLECTION_KEYS: CollectionKey[] = ["wallchain", "kaito", "skaito", "cookie"]
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,18 +21,20 @@ export async function GET(req: NextRequest) {
       ? getAllMockClaims(walletAddress)
       : await getAllClaims(walletAddress)
 
-    const totalPoints =
-      (claims.wallchain?.points || 0) + (claims.kaito?.points || 0)
+    const totalPoints = ALL_COLLECTION_KEYS.reduce(
+      (sum, key) => sum + (claims[key]?.points || 0),
+      0
+    )
+
+    const claimsResponse = ALL_COLLECTION_KEYS.reduce((acc, key) => {
+      acc[key] = claims[key]
+        ? { claimed: true, points: claims[key]!.points, claimedAt: claims[key]!.claimedAt }
+        : { claimed: false }
+      return acc
+    }, {} as Record<CollectionKey, { claimed: boolean; points?: number; claimedAt?: number }>)
 
     return NextResponse.json({
-      claims: {
-        wallchain: claims.wallchain
-          ? { claimed: true, points: claims.wallchain.points, claimedAt: claims.wallchain.claimedAt }
-          : { claimed: false },
-        kaito: claims.kaito
-          ? { claimed: true, points: claims.kaito.points, claimedAt: claims.kaito.claimedAt }
-          : { claimed: false },
-      },
+      claims: claimsResponse,
       totalPoints,
     })
   } catch (error) {

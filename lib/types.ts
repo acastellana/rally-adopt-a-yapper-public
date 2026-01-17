@@ -5,9 +5,11 @@ export interface XLink {
   linkedAt: number
 }
 
+export type CollectionKey = "wallchain" | "kaito" | "skaito" | "cookie"
+
 export interface Claim {
   walletAddress: string
-  nftType: "wallchain" | "kaito"
+  nftType: CollectionKey
   xUsername: string
   signature: string
   points: number
@@ -27,14 +29,21 @@ export interface OAuthRequestToken {
   expiresAt: number
 }
 
+export interface EligibilityItem {
+  eligible: boolean
+  count: number
+}
+
 export interface Eligibility {
-  wallchain: { eligible: boolean; count: number }
-  kaito: { eligible: boolean; count: number }
+  wallchain: EligibilityItem  // Solana - Quack Heads
+  kaito: EligibilityItem      // ETH - Yapybaras
+  skaito: EligibilityItem     // Base - Skaito token
+  cookie: EligibilityItem     // BSC - Cookie stake
 }
 
 export interface NFTConfig {
   id: number
-  key: "wallchain" | "kaito"
+  key: CollectionKey
   name: string
   collection: string
   description: string

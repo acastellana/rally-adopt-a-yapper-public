@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (nftType !== "wallchain" && nftType !== "kaito") {
+    const validTypes = ["wallchain", "kaito", "skaito", "cookie"]
+    if (!validTypes.includes(nftType)) {
       return NextResponse.json(
         { error: "Invalid NFT type" },
         { status: 400 }

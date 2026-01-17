@@ -10,11 +10,16 @@ import {
 } from "@/lib/mock-store"
 import { getNonce, deleteNonce, getClaim, setClaim, getXLink } from "@/lib/kv"
 import { verifySolanaSignature, buildClaimMessage } from "@/lib/verify-signature"
+import type { CollectionKey } from "@/lib/types"
 
-const POINTS = {
+const POINTS: Record<CollectionKey, number> = {
   wallchain: 2500,
   kaito: 1800,
-} as const
+  skaito: 1500,
+  cookie: 1200,
+}
+
+const VALID_NFT_TYPES: CollectionKey[] = ["wallchain", "kaito", "skaito", "cookie"]
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +32,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (nftType !== "wallchain" && nftType !== "kaito") {
+    if (!VALID_NFT_TYPES.includes(nftType)) {
       return NextResponse.json(
         { error: "Invalid NFT type" },
         { status: 400 }
@@ -101,10 +106,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Record the claim
-    const points = POINTS[nftType as keyof typeof POINTS]
+    const points = POINTS[nftType as CollectionKey]
     const claimData = {
       walletAddress,
-      nftType: nftType as "wallchain" | "kaito",
+      nftType: nftType as CollectionKey,
       xUsername: xLink.xUsername,
       signature,
       points,

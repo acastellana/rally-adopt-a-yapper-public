@@ -9,11 +9,11 @@ import { ClaimCard } from "@/components/claim-card"
 import { WalletButton } from "@/components/wallet-button"
 import { StatsBar } from "@/components/stats-bar"
 import { WelcomeScreen } from "@/components/welcome-screen"
-import { WalletInput } from "@/components/wallet-input"
+import { MultiWalletInput, type WalletAddresses } from "@/components/multi-wallet-input"
 import { ConnectXModal } from "@/components/connect-x-modal"
 import { Wallet, ArrowRight, Edit3, Zap, ExternalLink } from "lucide-react"
 import { NFTS } from "@/lib/config"
-import type { Eligibility } from "@/lib/types"
+import type { Eligibility, CollectionKey } from "@/lib/types"
 
 // Mock wallet mode for testing
 const MOCK_WALLET_ENABLED = process.env.NEXT_PUBLIC_MOCK_WALLET === "true"
@@ -29,6 +29,28 @@ const mockSignMessage = async (message: Uint8Array): Promise<Uint8Array> => {
   return fakeSignature
 }
 
+// Network colors for display
+const NETWORK_COLORS: Record<string, string> = {
+  solana: "#9945FF",
+  eth: "#627EEA",
+  base: "#0052FF",
+  bsc: "#F0B90B",
+}
+
+const NETWORK_NAMES: Record<string, string> = {
+  solana: "SOL",
+  eth: "ETH",
+  base: "BASE",
+  bsc: "BSC",
+}
+
+const NETWORK_EXPLORERS: Record<string, string> = {
+  solana: "https://solscan.io/account/",
+  eth: "https://etherscan.io/address/",
+  base: "https://basescan.org/address/",
+  bsc: "https://bscscan.com/address/",
+}
+
 type AppStep = "landing" | "claim" | "welcome"
 
 export default function Page() {
@@ -38,8 +60,13 @@ export default function Page() {
   const [claimed, setClaimed] = useState<Set<number>>(new Set())
   const [step, setStep] = useState<AppStep>("landing")
 
-  const [solanaAddress, setSolanaAddress] = useState<string | null>(null)
-  const [ethAddress, setEthAddress] = useState<string | null>(null)
+  // Multi-wallet state
+  const [walletAddresses, setWalletAddresses] = useState<WalletAddresses>({
+    solana: null,
+    eth: null,
+    base: null,
+    bsc: null,
+  })
   const [eligibility, setEligibility] = useState<Eligibility | null>(null)
   const [isCheckingEligibility, setIsCheckingEligibility] = useState(false)
   const [eligibilityError, setEligibilityError] = useState<string | null>(null)
@@ -49,8 +76,8 @@ export default function Page() {
   const [xConnected, setXConnected] = useState(false)
   const [xUsername, setXUsername] = useState<string | null>(null)
 
-  // Determine active wallet address for signing
-  const activeWalletAddress = connected && publicKey ? publicKey.toBase58() : solanaAddress
+  // Determine active wallet address for signing (prefer Solana, then connected wallet)
+  const activeWalletAddress = connected && publicKey ? publicKey.toBase58() : walletAddresses.solana
 
   // Use mock signMessage in mock mode when no real wallet is connected
   const effectiveSignMessage = useMemo(() => {
@@ -58,6 +85,13 @@ export default function Page() {
     if (MOCK_WALLET_ENABLED && activeWalletAddress) return mockSignMessage
     return null
   }, [signMessage, activeWalletAddress])
+
+  // Get connected networks for display
+  const connectedNetworks = useMemo(() => {
+    return Object.entries(walletAddresses)
+      .filter(([, addr]) => addr !== null)
+      .map(([network, addr]) => ({ network, address: addr as string }))
+  }, [walletAddresses])
 
   const handleOpenWalletModal = () => {
     setVisible(true)
@@ -71,13 +105,12 @@ export default function Page() {
 
       if (response.ok && data.claims) {
         const claimedIds = new Set<number>()
-        if (data.claims.wallchain?.claimed) {
-          const nft = NFTS.find((n) => n.key === "wallchain")
-          if (nft) claimedIds.add(nft.id)
-        }
-        if (data.claims.kaito?.claimed) {
-          const nft = NFTS.find((n) => n.key === "kaito")
-          if (nft) claimedIds.add(nft.id)
+        const collectionKeys: CollectionKey[] = ["wallchain", "kaito", "skaito", "cookie"]
+        for (const key of collectionKeys) {
+          if (data.claims[key]?.claimed) {
+            const nft = NFTS.find((n) => n.key === key)
+            if (nft) claimedIds.add(nft.id)
+          }
         }
         setClaimed(claimedIds)
       }
@@ -104,7 +137,7 @@ export default function Page() {
   }, [])
 
   const checkEligibility = useCallback(
-    async (solAddr: string, ethAddr: string) => {
+    async (addresses: WalletAddresses) => {
       setIsCheckingEligibility(true)
       setEligibilityError(null)
 
@@ -113,8 +146,10 @@ export default function Page() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            walletAddress: solAddr || null,
-            ethAddress: ethAddr || null,
+            solanaAddress: addresses.solana || null,
+            ethAddress: addresses.eth || null,
+            baseAddress: addresses.base || null,
+            bscAddress: addresses.bsc || null,
           }),
         })
 
@@ -125,13 +160,13 @@ export default function Page() {
         }
 
         setEligibility(data.eligibility)
-        if (solAddr) setSolanaAddress(solAddr)
-        if (ethAddr) setEthAddress(ethAddr)
+        setWalletAddresses(addresses)
 
-        // Check existing claims and X link status
-        if (solAddr) {
-          await fetchClaimStatus(solAddr)
-          const hasXLink = await checkXLinkStatus(solAddr)
+        // Use primary wallet for X link and claims (prefer Solana)
+        const primaryWallet = addresses.solana || addresses.eth || addresses.base || addresses.bsc
+        if (primaryWallet) {
+          await fetchClaimStatus(primaryWallet)
+          const hasXLink = await checkXLinkStatus(primaryWallet)
           if (!hasXLink) {
             setShowXModal(true)
           }
@@ -149,14 +184,14 @@ export default function Page() {
 
   const handleWalletConnect = useCallback(() => {
     if (publicKey && !eligibility) {
-      checkEligibility(publicKey.toBase58(), "")
+      checkEligibility({ solana: publicKey.toBase58(), eth: null, base: null, bsc: null })
     }
   }, [publicKey, eligibility, checkEligibility])
 
   // Fix: Move side effect from render to useEffect
   useEffect(() => {
     if (connected && publicKey && !eligibility && !isCheckingEligibility && !eligibilityError && step === "landing") {
-      checkEligibility(publicKey.toBase58(), "")
+      checkEligibility({ solana: publicKey.toBase58(), eth: null, base: null, bsc: null })
     }
   }, [connected, publicKey, eligibility, isCheckingEligibility, eligibilityError, step, checkEligibility])
 
@@ -170,20 +205,19 @@ export default function Page() {
     const newClaimed = new Set([...claimed, id])
     setClaimed(newClaimed)
 
-    const eligibleNfts = NFTS.filter((nft) => eligibility?.[nft.key as keyof Eligibility]?.eligible)
+    const eligibleNfts = NFTS.filter((nft) => eligibility?.[nft.key as CollectionKey]?.eligible)
     if (newClaimed.size === eligibleNfts.length && eligibleNfts.length > 0) {
       setTimeout(() => setStep("welcome"), 1200)
     }
   }
 
-  const eligibleNfts = NFTS.filter((nft) => eligibility?.[nft.key as keyof Eligibility]?.eligible)
+  const eligibleNfts = NFTS.filter((nft) => eligibility?.[nft.key as CollectionKey]?.eligible)
   const totalPoints = eligibleNfts.reduce((sum, nft) => sum + nft.points, 0)
   const pointsClaimed = eligibleNfts.filter((n) => claimed.has(n.id)).reduce((sum, nft) => sum + nft.points, 0)
   const allClaimed = claimed.size === eligibleNfts.length && eligibleNfts.length > 0
 
   const handleReset = () => {
-    setSolanaAddress(null)
-    setEthAddress(null)
+    setWalletAddresses({ solana: null, eth: null, base: null, bsc: null })
     setEligibility(null)
     setClaimed(new Set())
     setEligibilityError(null)
@@ -192,7 +226,8 @@ export default function Page() {
     setXUsername(null)
   }
 
-  const isActive = connected || !!solanaAddress || !!ethAddress
+  const hasAnyWallet = connectedNetworks.length > 0
+  const isActive = connected || hasAnyWallet
 
   if (step === "welcome") {
     return <WelcomeScreen totalPoints={totalPoints} />
@@ -229,7 +264,7 @@ export default function Page() {
             <span className="text-xl font-black tracking-tight text-foreground">Rally</span>
           </motion.div>
 
-          {step === "claim" && (solanaAddress || ethAddress) && !connected ? (
+          {step === "claim" && hasAnyWallet && !connected ? (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -379,7 +414,7 @@ export default function Page() {
                       exit={{ opacity: 0, y: -20 }}
                       className="flex w-full flex-col items-center"
                     >
-                      <WalletInput
+                      <MultiWalletInput
                         onSubmit={checkEligibility}
                         isLoading={isCheckingEligibility}
                         error={eligibilityError}
@@ -414,31 +449,30 @@ export default function Page() {
                       className="mb-10 text-center"
                     >
                       <p className="text-sm font-medium text-muted-foreground">Checking eligibility for</p>
-                      <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-                        {solanaAddress && (
+                      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                        {connectedNetworks.map(({ network, address }) => (
                           <a
-                            href={`https://solscan.io/account/${solanaAddress}`}
+                            key={network}
+                            href={`${NETWORK_EXPLORERS[network]}${address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-full border border-secondary/30 bg-secondary/10 px-4 py-1.5 font-mono text-xs text-secondary hover:bg-secondary/20 transition-colors"
+                            className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs transition-colors hover:opacity-80"
+                            style={{
+                              borderColor: `${NETWORK_COLORS[network]}40`,
+                              backgroundColor: `${NETWORK_COLORS[network]}15`,
+                              color: NETWORK_COLORS[network],
+                            }}
                           >
-                            SOL: {solanaAddress.slice(0, 6)}...{solanaAddress.slice(-6)}
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: NETWORK_COLORS[network] }}
+                            />
+                            {NETWORK_NAMES[network]}: {address.slice(0, 4)}...{address.slice(-4)}
                             <ExternalLink className="h-3 w-3" />
                           </a>
-                        )}
-                        {ethAddress && (
-                          <a
-                            href={`https://etherscan.io/address/${ethAddress}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
-                          >
-                            ETH: {ethAddress.slice(0, 6)}...{ethAddress.slice(-6)}
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
+                        ))}
                         {xUsername && (
-                          <span className="rounded-full border border-foreground/30 bg-foreground/10 px-4 py-1.5 font-mono text-xs text-foreground">
+                          <span className="rounded-full border border-foreground/30 bg-foreground/10 px-3 py-1.5 font-mono text-xs text-foreground">
                             {xUsername}
                           </span>
                         )}

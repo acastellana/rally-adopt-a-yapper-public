@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getHolders, getAllHolders, getContractByAddress, initializeDb } from "@/lib/db"
+import { getHolders, getAllHolders, getContractByAddress, initializeDb } from "@/lib/holders"
 
 export const dynamic = "force-dynamic"
 

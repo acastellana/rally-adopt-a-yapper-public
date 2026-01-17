@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
+import { isMockEnabled, setMockNonce } from "@/lib/mock-store"
 import { setNonce } from "@/lib/kv"
 import { buildClaimMessage } from "@/lib/verify-signature"
 
@@ -23,13 +24,18 @@ export async function POST(req: NextRequest) {
 
     // Generate random nonce
     const nonce = crypto.randomBytes(32).toString("hex")
-
-    // Store nonce with 5 minute TTL
-    await setNonce(nonce, {
+    const nonceData = {
       walletAddress,
       nftType,
       expiresAt: Date.now() + 300000, // 5 minutes
-    })
+    }
+
+    // Store nonce
+    if (isMockEnabled()) {
+      setMockNonce(nonce, nonceData)
+    } else {
+      await setNonce(nonce, nonceData)
+    }
 
     // Build message for signing
     const message = buildClaimMessage(walletAddress, nftType, nonce)

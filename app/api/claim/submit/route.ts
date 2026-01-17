@@ -1,4 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
+import {
+  isMockEnabled,
+  isMockSignatureEnabled,
+  getMockNonce,
+  deleteMockNonce,
+  getMockClaim,
+  setMockClaim,
+  getMockXLink,
+} from "@/lib/mock-store"
 import { getNonce, deleteNonce, getClaim, setClaim, getXLink } from "@/lib/kv"
 import { verifySolanaSignature, buildClaimMessage } from "@/lib/verify-signature"
 
@@ -25,8 +34,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const useMock = isMockEnabled()
+
     // Verify nonce exists and is valid
-    const storedNonce = await getNonce(nonce)
+    const storedNonce = useMock ? getMockNonce(nonce) : await getNonce(nonce)
 
     if (!storedNonce) {
       return NextResponse.json(
@@ -43,7 +54,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (storedNonce.expiresAt < Date.now()) {
-      await deleteNonce(nonce)
+      if (useMock) {
+        deleteMockNonce(nonce)
+      } else {
+        await deleteNonce(nonce)
+      }
       return NextResponse.json(
         { error: "Nonce expired" },
         { status: 400 }
@@ -51,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify X account is linked
-    const xLink = await getXLink(walletAddress)
+    const xLink = useMock ? getMockXLink(walletAddress) : await getXLink(walletAddress)
 
     if (!xLink) {
       return NextResponse.json(
@@ -61,7 +76,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if already claimed
-    const existingClaim = await getClaim(walletAddress, nftType)
+    const existingClaim = useMock
+      ? getMockClaim(walletAddress, nftType)
+      : await getClaim(walletAddress, nftType)
 
     if (existingClaim) {
       return NextResponse.json(
@@ -70,31 +87,37 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify signature
-    const message = buildClaimMessage(walletAddress, nftType, nonce)
-    const isValid = verifySolanaSignature(message, signature, walletAddress)
+    // Verify signature (skip if mocking signatures)
+    if (!isMockSignatureEnabled()) {
+      const message = buildClaimMessage(walletAddress, nftType, nonce)
+      const isValid = verifySolanaSignature(message, signature, walletAddress)
 
-    if (!isValid) {
-      return NextResponse.json(
-        { error: "Invalid signature" },
-        { status: 400 }
-      )
+      if (!isValid) {
+        return NextResponse.json(
+          { error: "Invalid signature" },
+          { status: 400 }
+        )
+      }
     }
 
     // Record the claim
     const points = POINTS[nftType as keyof typeof POINTS]
-
-    await setClaim({
+    const claimData = {
       walletAddress,
       nftType: nftType as "wallchain" | "kaito",
       xUsername: xLink.xUsername,
       signature,
       points,
       claimedAt: Date.now(),
-    })
+    }
 
-    // Delete the used nonce
-    await deleteNonce(nonce)
+    if (useMock) {
+      setMockClaim(claimData)
+      deleteMockNonce(nonce)
+    } else {
+      await setClaim(claimData)
+      await deleteNonce(nonce)
+    }
 
     return NextResponse.json({
       success: true,

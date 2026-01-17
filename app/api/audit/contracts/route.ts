@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getAllContracts, getContractsByType, getStats, initializeDb } from "@/lib/db"
+import { getAllContracts, getContractsByType, getStats, initializeDb } from "@/lib/holders"
 
 export const dynamic = "force-dynamic"
 

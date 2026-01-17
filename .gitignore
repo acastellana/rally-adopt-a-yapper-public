@@ -34,3 +34,4 @@ data/*.db-shm
 
 # Test results
 test-results/
+.env*.local

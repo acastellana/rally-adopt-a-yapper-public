@@ -14,13 +14,23 @@ export interface ContractSnapshot {
   project: string | null
   network: string
   type: "nft" | "token"
-  holdersCount: number
+  /** For contracts with incomplete holder data, this stores the known total from external sources */
+  knownHoldersCount?: number
   totalSupply: string
   verified: boolean
   verifiedAt: string | null
   source: string
   explorer: string
   holders: HolderEntry[]
+}
+
+/**
+ * Get the holders count for a contract.
+ * - If knownHoldersCount is set, use that (it's the authoritative count)
+ * - Otherwise fall back to holders array length
+ */
+export function getHoldersCount(contract: ContractSnapshot): number {
+  return contract.knownHoldersCount ?? contract.holders.length
 }
 
 export interface HolderEntry {
@@ -40,7 +50,7 @@ export const NFT_SNAPSHOTS: ContractSnapshot[] = [
     project: "Kaito",
     network: "ETH",
     type: "nft",
-    holdersCount: 1001,
+    knownHoldersCount: 1000, // Actual count from Blockscout API
     totalSupply: "1500",
     verified: true,
     verifiedAt: "2026-01-16T16:55:00Z",
@@ -105,7 +115,7 @@ export const NFT_SNAPSHOTS: ContractSnapshot[] = [
     project: "Wallchain",
     network: "Solana",
     type: "nft",
-    holdersCount: 1480,
+    knownHoldersCount: 1381, // Actual count from Helius API
     totalSupply: "1999",
     verified: false,
     verifiedAt: null,
@@ -122,7 +132,7 @@ export const TOKEN_SNAPSHOTS: ContractSnapshot[] = [
     project: "Kaito",
     network: "Base",
     type: "token",
-    holdersCount: 17345,
+    knownHoldersCount: 17345, // Actual count from Blockscout API
     totalSupply: "21105390870042485574806742",
     verified: true,
     verifiedAt: "2026-01-16T16:55:00Z",
@@ -152,7 +162,7 @@ export const TOKEN_SNAPSHOTS: ContractSnapshot[] = [
     project: null,
     network: "Base",
     type: "token",
-    holdersCount: 90456,
+    knownHoldersCount: 90455, // Actual count from Blockscout API
     totalSupply: "209196154185784000000000000",
     verified: true,
     verifiedAt: "2026-01-16T16:55:00Z",
@@ -182,7 +192,7 @@ export const TOKEN_SNAPSHOTS: ContractSnapshot[] = [
     project: null,
     network: "BSC",
     type: "token",
-    holdersCount: 24500,
+    knownHoldersCount: 0, // BscScan API requires paid plan - no data available
     totalSupply: "33000000000000000000000000",
     verified: false,
     verifiedAt: null,
@@ -195,6 +205,11 @@ export const TOKEN_SNAPSHOTS: ContractSnapshot[] = [
 // Helper to get all snapshots
 export function getAllSnapshots(): ContractSnapshot[] {
   return [...NFT_SNAPSHOTS, ...TOKEN_SNAPSHOTS]
+}
+
+// Helper to get total holders across all contracts (calculated)
+export function getTotalHolders(): number {
+  return getAllSnapshots().reduce((sum, contract) => sum + getHoldersCount(contract), 0)
 }
 
 // Helper to get snapshot by address

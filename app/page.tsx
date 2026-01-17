@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useWalletModal } from "@solana/wallet-adapter-react-ui"
 import { motion, AnimatePresence } from "framer-motion"
@@ -14,6 +14,20 @@ import { ConnectXModal } from "@/components/connect-x-modal"
 import { Wallet, ArrowRight, Edit3, Zap, ExternalLink } from "lucide-react"
 import { NFTS } from "@/lib/config"
 import type { Eligibility } from "@/lib/types"
+
+// Mock wallet mode for testing
+const MOCK_WALLET_ENABLED = process.env.NEXT_PUBLIC_MOCK_WALLET === "true"
+
+// Mock signMessage function that returns a fake signature
+const mockSignMessage = async (message: Uint8Array): Promise<Uint8Array> => {
+  // Return a fake 64-byte signature (Ed25519 signature size)
+  const fakeSignature = new Uint8Array(64)
+  // Fill with deterministic data based on message
+  for (let i = 0; i < 64; i++) {
+    fakeSignature[i] = (message[i % message.length] + i) % 256
+  }
+  return fakeSignature
+}
 
 type AppStep = "landing" | "claim" | "welcome"
 
@@ -37,6 +51,13 @@ export default function Page() {
 
   // Determine active wallet address for signing
   const activeWalletAddress = connected && publicKey ? publicKey.toBase58() : solanaAddress
+
+  // Use mock signMessage in mock mode when no real wallet is connected
+  const effectiveSignMessage = useMemo(() => {
+    if (signMessage) return signMessage
+    if (MOCK_WALLET_ENABLED && activeWalletAddress) return mockSignMessage
+    return null
+  }, [signMessage, activeWalletAddress])
 
   const handleOpenWalletModal = () => {
     setVisible(true)
@@ -444,12 +465,12 @@ export default function Page() {
                               onClaim={() => handleClaim(nft.id)}
                               index={i}
                               walletAddress={activeWalletAddress}
-                              signMessage={signMessage || null}
+                              signMessage={effectiveSignMessage}
                             />
                           ))}
                         </div>
 
-                        {!allClaimed && !signMessage && (
+                        {!allClaimed && !effectiveSignMessage && (
                           <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

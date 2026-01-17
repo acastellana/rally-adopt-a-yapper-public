@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { isMockEnabled, getAllMockClaims } from "@/lib/mock-store"
 import { getAllClaims } from "@/lib/kv"
 
 export async function GET(req: NextRequest) {
@@ -13,7 +14,9 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const claims = await getAllClaims(walletAddress)
+    const claims = isMockEnabled()
+      ? getAllMockClaims(walletAddress)
+      : await getAllClaims(walletAddress)
 
     const totalPoints =
       (claims.wallchain?.points || 0) + (claims.kaito?.points || 0)

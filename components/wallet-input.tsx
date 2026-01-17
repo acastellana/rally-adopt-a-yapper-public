@@ -5,6 +5,9 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Search, Loader2, AlertCircle, CheckCircle2, Sparkles } from "lucide-react"
 
+// Use mock wallet address from env for testing, otherwise start empty
+const MOCK_WALLET_ADDRESS = process.env.NEXT_PUBLIC_MOCK_WALLET_ADDRESS || ""
+
 interface WalletInputProps {
   onSubmit: (solanaAddress: string, ethAddress: string) => void
   isLoading: boolean
@@ -12,7 +15,7 @@ interface WalletInputProps {
 }
 
 export function WalletInput({ onSubmit, isLoading, error }: WalletInputProps) {
-  const [solanaAddress, setSolanaAddress] = useState("8KDgqkk3FgZCjMozaASfQcm5JZfKNgBKA5vQXEJzY6cr")
+  const [solanaAddress, setSolanaAddress] = useState(MOCK_WALLET_ADDRESS)
   const [ethAddress, setEthAddress] = useState("")
   const [focusedField, setFocusedField] = useState<"solana" | "eth" | null>(null)
 

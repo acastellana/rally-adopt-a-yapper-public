@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getHolderByAddress } from "@/lib/db"
+import { getHolderByAddress } from "@/lib/holders"
 
 const COLLECTIONS = {
   wallchain: {

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ExternalLink, Shield, Coins, Image as ImageIcon, Zap, ChevronDown, Copy, Check, Users, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { NFT_SNAPSHOTS, TOKEN_SNAPSHOTS, SNAPSHOT_DATE, type ContractSnapshot } from "@/lib/data/holders-snapshot"
+import { NFT_SNAPSHOTS, TOKEN_SNAPSHOTS, SNAPSHOT_DATE, getHoldersCount, type ContractSnapshot } from "@/lib/data/holders-snapshot"
 
 const NETWORK_COLORS: Record<string, string> = {
   ETH: "from-blue-500 to-indigo-600",
@@ -85,7 +85,7 @@ function HoldersTable({ contract }: { contract: ContractSnapshot }) {
           Holder data requires API key for {contract.network}
         </p>
         <p className="text-zinc-600 text-xs mt-1">
-          Total holders: {contract.holdersCount.toLocaleString()} (user-provided)
+          Total holders: {getHoldersCount(contract).toLocaleString()} (user-provided)
         </p>
       </div>
     )
@@ -98,7 +98,7 @@ function HoldersTable({ contract }: { contract: ContractSnapshot }) {
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-emerald-400" />
           <span className="text-sm font-mono text-zinc-400">
-            Top Holders <span className="text-zinc-600">({contract.holdersCount.toLocaleString()} total)</span>
+            Top Holders <span className="text-zinc-600">({getHoldersCount(contract).toLocaleString()} total)</span>
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ function ContractRow({
         <div className="col-span-2 flex items-center">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-zinc-600" />
-            <span className="font-mono text-emerald-400">{formatNumber(contract.holdersCount)}</span>
+            <span className="font-mono text-emerald-400">{formatNumber(getHoldersCount(contract))}</span>
           </div>
         </div>
         <div className="col-span-2 flex items-center font-mono text-zinc-400">
@@ -453,7 +453,7 @@ export default function AuditPage() {
           {[
             { label: "NFT Collections", value: NFT_SNAPSHOTS.length, icon: ImageIcon },
             { label: "Token Contracts", value: TOKEN_SNAPSHOTS.length, icon: Coins },
-            { label: "Total Holders", value: formatNumber([...NFT_SNAPSHOTS, ...TOKEN_SNAPSHOTS].reduce((a, b) => a + b.holdersCount, 0)), icon: Users },
+            { label: "Total Holders", value: formatNumber([...NFT_SNAPSHOTS, ...TOKEN_SNAPSHOTS].reduce((a, b) => a + getHoldersCount(b), 0)), icon: Users },
             { label: "Verified", value: `${verifiedCount}/${totalCount}`, icon: CheckCircle2 },
           ].map((stat) => (
             <div key={stat.label} className="relative group">

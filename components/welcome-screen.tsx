@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
-import { ArrowRight, PartyPopper, Sparkles } from "lucide-react"
+import { ArrowRight, PartyPopper, Sparkles, X } from "lucide-react"
 
 interface Confetti {
   x: number
@@ -16,11 +16,42 @@ interface Confetti {
   opacity: number
 }
 
-interface WelcomeScreenProps {
-  totalPoints: number
+// Twitter handles for each collection
+const COLLECTION_HANDLES: Record<string, string> = {
+  wallchain: "@wallaboraxyz",
+  kaito: "@KaitoAI",
+  skaito: "@KaitoAI",
+  cookie: "@cookie3_com",
 }
 
-export function WelcomeScreen({ totalPoints }: WelcomeScreenProps) {
+const COLLECTION_NAMES: Record<string, string> = {
+  wallchain: "Quack Heads",
+  kaito: "Yapybaras",
+  skaito: "sKAITO",
+  cookie: "Cookie",
+}
+
+interface WelcomeScreenProps {
+  totalPoints: number
+  claimedCollections?: string[]
+}
+
+export function WelcomeScreen({ totalPoints, claimedCollections = [] }: WelcomeScreenProps) {
+  // Build tweet text with relevant handles
+  const getHandles = () => {
+    const uniqueHandles = [...new Set(claimedCollections.map(key => COLLECTION_HANDLES[key]).filter(Boolean))]
+    return uniqueHandles.join(" ")
+  }
+
+  const getCollectionText = () => {
+    if (claimedCollections.length === 0) return ""
+    const names = claimedCollections.map(key => COLLECTION_NAMES[key]).filter(Boolean)
+    if (names.length === 1) return names[0]
+    if (names.length === 2) return `${names[0]} & ${names[1]}`
+    return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`
+  }
+
+  const tweetText = `i just got ${totalPoints.toLocaleString()} RLP for holding ${getCollectionText()} ${getHandles()}\n\ninfofi isn't dead - @RallyOnchain is still kicking and wants to adopt all yappers. join us! 👇`
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const confettiRef = useRef<Confetti[]>([])
   const [showContent, setShowContent] = useState(false)
@@ -222,38 +253,54 @@ export function WelcomeScreen({ totalPoints }: WelcomeScreenProps) {
             You've received immediate access to Rally.
           </motion.p>
 
-          <motion.button
-            className="group relative mt-8 overflow-hidden rounded-full px-10 py-4 font-bold text-white transition-all"
+          <motion.div
+            className="mt-8 flex flex-col items-center gap-4 sm:flex-row"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
           >
-            {/* Animated gradient background */}
-            <span
-              className="absolute inset-0 animate-shimmer"
-              style={{
-                background: "linear-gradient(90deg, #4E11CC, #E943DE, #FF78E2, #E943DE, #4E11CC)",
-                backgroundSize: "200% 100%",
-              }}
-            />
+            <motion.button
+              className="group relative overflow-hidden rounded-full px-10 py-4 font-bold text-white transition-all"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              {/* Animated gradient background */}
+              <span
+                className="absolute inset-0 animate-shimmer"
+                style={{
+                  background: "linear-gradient(90deg, #4E11CC, #E943DE, #FF78E2, #E943DE, #4E11CC)",
+                  backgroundSize: "200% 100%",
+                }}
+              />
 
-            {/* Shine effect */}
-            <motion.span
-              className="absolute inset-0 opacity-0 group-hover:opacity-100"
-              style={{
-                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-              }}
-              animate={{ x: ["-100%", "100%"] }}
-              transition={{ duration: 0.6, repeat: Number.POSITIVE_INFINITY, repeatDelay: 0.8 }}
-            />
+              {/* Shine effect */}
+              <motion.span
+                className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                style={{
+                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
+                }}
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ duration: 0.6, repeat: Number.POSITIVE_INFINITY, repeatDelay: 0.8 }}
+              />
 
-            <span className="relative flex items-center gap-3">
-              Access the Platform
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </span>
-          </motion.button>
+              <span className="relative flex items-center gap-3">
+                Access the Platform
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </span>
+            </motion.button>
+
+            <motion.a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent("https://rally.xyz")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-full border border-foreground/20 bg-foreground px-6 py-4 font-bold text-background transition-all hover:bg-foreground/90"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <X className="h-5 w-5" strokeWidth={2.5} />
+              Share on X
+            </motion.a>
+          </motion.div>
         </motion.div>
       )}
     </div>

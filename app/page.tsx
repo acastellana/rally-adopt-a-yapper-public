@@ -76,8 +76,10 @@ export default function Page() {
   const [xConnected, setXConnected] = useState(false)
   const [xUsername, setXUsername] = useState<string | null>(null)
 
-  // Determine active wallet address for signing (prefer Solana, then connected wallet)
-  const activeWalletAddress = connected && publicKey ? publicKey.toBase58() : walletAddresses.solana
+  // Determine active wallet address for signing (prefer Solana, then any connected wallet)
+  const activeWalletAddress = connected && publicKey
+    ? publicKey.toBase58()
+    : walletAddresses.solana || walletAddresses.eth || walletAddresses.base || walletAddresses.bsc
 
   // Use mock signMessage in mock mode when no real wallet is connected
   const effectiveSignMessage = useMemo(() => {
@@ -230,14 +232,15 @@ export default function Page() {
   const isActive = connected || hasAnyWallet
 
   if (step === "welcome") {
-    return <WelcomeScreen totalPoints={totalPoints} />
+    const claimedNftKeys = eligibleNfts.map(nft => nft.key)
+    return <WelcomeScreen totalPoints={totalPoints} claimedCollections={claimedNftKeys} />
   }
 
   return (
     <div className="relative min-h-screen bg-background">
       <GradientBlob />
 
-      <ConnectXModal isOpen={showXModal} walletAddress={activeWalletAddress} onConnected={handleXConnected} />
+      <ConnectXModal isOpen={showXModal && !!activeWalletAddress} walletAddress={activeWalletAddress} onConnected={handleXConnected} />
 
       {/* Header */}
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-border/30 bg-background/60 backdrop-blur-2xl">
@@ -446,37 +449,33 @@ export default function Page() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mb-10 text-center"
+                      className="mb-10 flex flex-col items-center gap-3"
                     >
-                      <p className="text-sm font-medium text-muted-foreground">Checking eligibility for</p>
-                      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+                      <p className="text-sm font-medium text-muted-foreground">Connected wallets</p>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
                         {connectedNetworks.map(({ network, address }) => (
                           <a
                             key={network}
                             href={`${NETWORK_EXPLORERS[network]}${address}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs transition-colors hover:opacity-80"
-                            style={{
-                              borderColor: `${NETWORK_COLORS[network]}40`,
-                              backgroundColor: `${NETWORK_COLORS[network]}15`,
-                              color: NETWORK_COLORS[network],
-                            }}
+                            className="flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-3 py-2 font-mono text-xs text-foreground transition-colors hover:bg-card/80"
                           >
                             <span
-                              className="h-2 w-2 rounded-full"
+                              className="h-2.5 w-2.5 rounded-full"
                               style={{ backgroundColor: NETWORK_COLORS[network] }}
                             />
-                            {NETWORK_NAMES[network]}: {address.slice(0, 4)}...{address.slice(-4)}
-                            <ExternalLink className="h-3 w-3" />
+                            <span className="font-medium">{NETWORK_NAMES[network]}</span>
+                            <span className="text-muted-foreground">{address.slice(0, 4)}...{address.slice(-4)}</span>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
                           </a>
                         ))}
-                        {xUsername && (
-                          <span className="rounded-full border border-foreground/30 bg-foreground/10 px-3 py-1.5 font-mono text-xs text-foreground">
-                            {xUsername}
-                          </span>
-                        )}
                       </div>
+                      {xUsername && (
+                        <span className="rounded-full border border-foreground/30 bg-foreground/10 px-4 py-2 text-sm font-medium text-foreground">
+                          {xUsername}
+                        </span>
+                      )}
                     </motion.div>
 
                     <StatsBar totalPoints={totalPoints} nftsOwned={eligibleNfts.length} pointsClaimed={pointsClaimed} />
